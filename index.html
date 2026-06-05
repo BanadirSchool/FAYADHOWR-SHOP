@@ -18,7 +18,7 @@
         body {
             position: relative;
             min-height: 100vh;
-            background: url('FAYDHOWR.png') no-repeat center center/cover;
+            background: url('FAYADHOWR.png') no-repeat center center/cover;
             background-attachment: fixed;
             background-size: cover;
             display: flex;
@@ -544,7 +544,7 @@
     function saveAll() { localStorage.setItem('products', JSON.stringify(products)); localStorage.setItem('sales', JSON.stringify(sales)); updateDashboard(); renderProducts(); renderSales(); renderReport(); }
     function updateDashboard() { let totalQty = products.reduce((s,p)=>s+(p.quantity||0),0); let soldQty = sales.reduce((s,i)=>s+(i.quantity||0),0); let revenue = sales.reduce((s,i)=>i.isDebt==='no'?s+(i.totalPrice||0):s,0); document.getElementById('totalProducts').innerText = totalQty; document.getElementById('totalSold').innerText = soldQty; document.getElementById('totalRevenue').innerText = `$${revenue.toFixed(2)}`; }
     function renderProducts() { let tbody = document.querySelector('#productsTable tbody'); if(!tbody) return; tbody.innerHTML = ''; products.forEach((p,idx)=>{ tbody.innerHTML += `<tr><td>${escapeHtml(p.name)}</td><td>${p.unit}</td><td>${p.quantity}</td><td>$${p.price.toFixed(2)}</td><td>$${(p.quantity*p.price).toFixed(2)}</td><td><button class="btn-warning btn-sm" onclick="openEditProductModal(${idx})">Edit</button> <button class="btn-danger btn-sm" onclick="deleteProduct(${idx})">Del</button></td></tr>`; }); }
-    function renderSales() { let tbody = document.querySelector('#salesTable tbody'); let search = document.getElementById('searchSale')?.value.toLowerCase() || ''; let filtered = sales.filter(s=>s.productName.toLowerCase().includes(search)||s.customer.toLowerCase().includes(search)); tbody.innerHTML = ''; filtered.forEach((s,idx)=>{ let originalIdx = sales.findIndex(sale=>sale.date===s.date && sale.productName===s.productName && sale.customer===s.customer); tbody.innerHTML += `<tr><td>${escapeHtml(s.productName)}</td><td>${escapeHtml(s.customer)}</td><td>${s.quantity}</td><td>$${s.unitPrice?.toFixed(2)}</td><td>${s.isDebt==='yes'?'Deen':'Cash'}</td><td>${s.date}</td><td><button class="btn-warning btn-sm" onclick="openEditSaleModal(${originalIdx})">Edit</button> <button class="btn-danger btn-sm" onclick="deleteSale(${originalIdx})">Del</button></td></tr>`; }); }
+    function renderSales() { let tbody = document.querySelector('#salesTable tbody'); let search = document.getElementById('searchSale')?.value.toLowerCase() || ''; let filtered = sales.filter(s=>s.productName.toLowerCase().includes(search)||s.customer.toLowerCase().includes(search)); tbody.innerHTML = ''; filtered.forEach((s,idx)=>{ let originalIdx = sales.findIndex(sale=>sale.date===s.date && sale.productName===s.productName && sale.customer===s.customer); tbody.innerHTML += `</td><td>${escapeHtml(s.productName)}</td><td>${escapeHtml(s.customer)}</td><td>${s.quantity}</td><td>$${s.unitPrice?.toFixed(2)}</td><td>${s.isDebt==='yes'?'Deen':'Cash'}</td><td>${s.date}</td><td><button class="btn-warning btn-sm" onclick="openEditSaleModal(${originalIdx})">Edit</button> <button class="btn-danger btn-sm" onclick="deleteSale(${originalIdx})">Del</button></td></tr>`; }); }
     function renderReport() { let search = document.getElementById('reportSearch')?.value.toLowerCase() || ''; let type = document.getElementById('reportType')?.value; let filtered = sales.filter(s=>s.customer.toLowerCase().includes(search)); if(type==='iibsaday') filtered = filtered.filter(s=>s.isDebt==='no'); if(type==='deen') filtered = filtered.filter(s=>s.isDebt==='yes'); let tbody = document.querySelector('#reportTable tbody'); tbody.innerHTML = ''; filtered.forEach(s=>{ tbody.innerHTML += `<tr><td>${escapeHtml(s.customer)}</td><td>${s.isDebt==='yes'?'Deen':'Cash'}</td><td>${escapeHtml(s.productName)}</td><td>${s.quantity}</td><td>$${s.totalPrice?.toFixed(2)}</td><td>${s.date}</td></tr>`; }); }
     function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 
@@ -566,133 +566,187 @@
     document.getElementById('saveProductBtn')?.addEventListener('click',()=>{ let name=document.getElementById('productName').value.trim(); let unit=document.getElementById('unitType').value; let qty=parseInt(document.getElementById('quantity').value); let price=parseFloat(document.getElementById('price').value); if(!name||isNaN(qty)||isNaN(price)||qty<=0||price<=0) return alert('Fadlan dhamaystir.'); products.push({name,unit,quantity:qty,price}); saveAll(); document.getElementById('productName').value=''; document.getElementById('quantity').value=''; document.getElementById('price').value=''; alert('La xareeyay!'); });
     document.getElementById('sellProductBtn')?.addEventListener('click',()=>{ let pName=document.getElementById('saleProductName').value.trim(); let cust=document.getElementById('customerName').value.trim(); let qty=parseInt(document.getElementById('saleQty').value); let priceInput=parseFloat(document.getElementById('salePrice').value); let isDebt=document.getElementById('isDebt').value; if(!pName||!cust||isNaN(qty)||qty<=0) return alert('Fadlan buuxi.'); let prodIndex=products.findIndex(p=>p.name.toLowerCase()===pName.toLowerCase()); if(prodIndex===-1) return alert('Alaabta lama helin.'); if(products[prodIndex].quantity<qty) return alert(`Tirada ku filan majirto. Hadhay: ${products[prodIndex].quantity}`); let unitPrice=(!isNaN(priceInput)&&priceInput>0)?priceInput:products[prodIndex].price; let total=unitPrice*qty; products[prodIndex].quantity-=qty; if(products[prodIndex].quantity===0) products.splice(prodIndex,1); sales.push({productName:pName,customer:cust,quantity:qty,unitPrice,totalPrice:total,isDebt,date:new Date().toLocaleString()}); saveAll(); document.getElementById('saleProductName').value=''; document.getElementById('customerName').value=''; document.getElementById('saleQty').value=''; document.getElementById('salePrice').value=''; alert('Iibka waa la dhammaystiray!'); });
 
-    // ========== BEAUTIFUL INVOICE PDF & EXCEL ==========
-    function generateBeautifulInvoiceHtml(data, title, totalAmount, isReport = false, hasData = true) {
-        if(!hasData || data.length === 0) {
-            return `
-            <div class="print-invoice" style="font-family:'Segoe UI',Arial,sans-serif; max-width:1100px; margin:0 auto; background:linear-gradient(135deg, #fff 0%, #f8f9fa 100%); padding:30px; border-radius:15px; text-align:center;">
-                <div style="text-align:center; margin-bottom:30px; border-bottom:3px solid #2c7da0; padding-bottom:20px;">
-                    <i class="fas fa-spray-can-sparkles" style="font-size:45px; color:#2c7da0;"></i>
-                    <h1 style="color:#2c7da0;">FAYADHOWR Cleaning Company</h1>
-                </div>
-                <div style="background:#fff3cd; border:1px solid #ffecb3; padding:30px; border-radius:15px; margin:20px 0;">
-                    <i class="fas fa-info-circle" style="font-size:50px; color:#e67e22;"></i>
-                    <h2 style="color:#856404;">Xogta Iibka Ma Jirto!</h2>
-                    <p style="font-size:16px; margin-top:10px;">Waa billow, haddaan jiraan wax iib ah oo la sameeyay, markaas PDF-gu wuxuu soo saari doonaa invoice qurux badan.</p>
-                    <p style="margin-top:15px;">Fadlan u tag qaybta <strong>"2. Alaab Iibin"</strong> oo samee iib, kadib soo dejiso PDF-ka.</p>
-                </div>
-                <div style="margin-top:20px; color:#666;">FAYADHOWR Cleaning Company - Waad ku mahadsantahay!</div>
-            </div>`;
+    // ========== FIXED PDF GENERATION ==========
+    function generateInvoiceHTML(data, totalAmount, isReport = false) {
+        let rows = '';
+        if(data.length === 0) {
+            rows = `<tr><td colspan="6" style="padding:30px; text-align:center; color:#1a3a5c;">⚠️ Xogta Iibka Ma Jirto! Fadlan samee iib ka hor intaadan PDF soo saarin.</td></tr>`;
+        } else {
+            rows = data.map((row, idx) => {
+                let bgColor = idx % 2 === 0 ? '#f9fcff' : '#f0f7ff';
+                return `<tr style="background:${bgColor};">
+                    ${row.map(cell => `<td style="padding:10px; border:1px solid #c0d4e8; color:#1a3a5c;">${cell}</td>`).join('')}
+                </tr>`;
+            }).join('');
         }
+        
+        let headers = isReport ? 
+            ['Customer', 'Nooca', 'Alaabta', 'Tiro', 'Wadarta', 'Waqti'] :
+            ['Alaab', 'Customer', 'Tiro', 'Qiimo Unit', 'Deen?', 'Wadarta'];
+        
+        let headerHtml = headers.map(h => `<th style="padding:12px; border:1px solid #0d2b45; background:#1a3a5c; color:white;">${h}</th>`).join('');
+        
         return `
-        <div class="print-invoice" style="font-family:'Segoe UI',Arial,sans-serif; max-width:1100px; margin:0 auto; background:linear-gradient(135deg, #fff 0%, #f8f9fa 100%); padding:30px; border-radius:15px; box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-            <div style="text-align:center; margin-bottom:30px; border-bottom:3px solid #2c7da0; padding-bottom:20px;">
+        <div style="font-family:'Segoe UI',Arial,sans-serif; max-width:1100px; margin:0 auto; background:white; padding:30px;">
+            <div style="text-align:center; margin-bottom:30px; border-bottom:3px solid #1a3a5c; padding-bottom:20px;">
                 <div style="display:flex; justify-content:center; align-items:center; gap:15px;">
-                    <i class="fas fa-spray-can-sparkles" style="font-size:45px; color:#2c7da0;"></i>
+                    <div style="font-size:45px; color:#1a3a5c;">🧼</div>
                     <div>
-                        <h1 style="color:#2c7da0; margin:0;">FAYADHOWR Cleaning Company</h1>
-                        <p style="margin:5px 0; color:#555;">Clean & Glass - Tayada Sare</p>
+                        <h1 style="color:#1a3a5c; margin:0;">FAYADHOWR Cleaning Company</h1>
+                        <p style="margin:5px 0; color:#3a6b92;">Clean & Glass - Tayada Sare</p>
                     </div>
                 </div>
-                <p style="margin-top:10px; font-size:13px; color:#666;">📍 Muqdisho, Somalia | 📞 +252 61 2345678 | ✉ info@fayadhowr.com</p>
+                <p style="margin-top:10px; font-size:13px; color:#4a7aa5;">📍 Muqdisho, Somalia | 📞 +252 61 2345678 | ✉ info@fayadhowr.com</p>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:25px; background:#e8f4f8; padding:15px; border-radius:10px;">
-                <div><strong>👤 User daabacay:</strong> Fardowsa Mire</div>
-                <div><strong>📅 Taariikhda:</strong> ${new Date().toLocaleString()}</div>
-                <div><strong>🧾 Invoice #:</strong> ${isReport ? 'RPT-' : 'INV-'}${Date.now()}</div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:25px; background:#e8f0f8; padding:15px; border-radius:10px;">
+                <div><strong style="color:#1a3a5c;">👤 User daabacay:</strong> <span style="color:#2c5a7a;">Fardowsa Mire</span></div>
+                <div><strong style="color:#1a3a5c;">📅 Taariikhda:</strong> <span style="color:#2c5a7a;">${new Date().toLocaleString()}</span></div>
+                <div><strong style="color:#1a3a5c;">🧾 Invoice #:</strong> <span style="color:#2c5a7a;">${isReport ? 'RPT-' : 'INV-'}${Date.now()}</span></div>
             </div>
             <div style="overflow-x:auto;">
-                <table style="width:100%; border-collapse:collapse; font-size:14px;">
-                    <thead>
-                        <tr style="background:linear-gradient(135deg, #2c7da0, #1f5068); color:white;">
-                            ${isReport ? '<th style="padding:12px; border:1px solid #ddd;">Customer</th><th style="padding:12px; border:1px solid #ddd;">Nooca</th><th style="padding:12px; border:1px solid #ddd;">Alaabta</th><th style="padding:12px; border:1px solid #ddd;">Tiro</th><th style="padding:12px; border:1px solid #ddd;">Wadarta</th><th style="padding:12px; border:1px solid #ddd;">Waqti</th>' : '<th style="padding:12px; border:1px solid #ddd;">Alaab</th><th style="padding:12px; border:1px solid #ddd;">Customer</th><th style="padding:12px; border:1px solid #ddd;">Tiro</th><th style="padding:12px; border:1px solid #ddd;">Qiimo Unit</th><th style="padding:12px; border:1px solid #ddd;">Deen?</th><th style="padding:12px; border:1px solid #ddd;">Wadarta</th>'}
-                        </td>
-                    </thead>
-                    <tbody>
-                        ${data.map(row => `<tr style="border-bottom:1px solid #ddd;">${row.map(cell => `<td style="padding:10px; border:1px solid #ddd;">${cell}</td>`).join('')}</tr>`).join('')}
-                    </tbody>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>${headerHtml}</thead>
+                    <tbody>${rows}</tbody>
                 </table>
             </div>
-            <div style="margin-top:25px; text-align:right; background:#e8f4f8; padding:15px; border-radius:10px;">
-                <h3 style="color:#2c7da0;">Total Cash Lacagta: <span style="color:#e67e22;">$${totalAmount.toFixed(2)}</span></h3>
+            <div style="margin-top:25px; text-align:right; background:#e8f0f8; padding:15px; border-radius:10px;">
+                <h3 style="color:#1a3a5c;">Total Cash Lacagta: <span style="color:#e67e22;">$${totalAmount.toFixed(2)}</span></h3>
             </div>
-            <div style="margin-top:30px; text-align:center; border-top:2px solid #2c7da0; padding-top:20px; font-size:12px; color:#666;">
+            <div style="margin-top:30px; text-align:center; border-top:2px solid #1a3a5c; padding-top:20px; font-size:12px; color:#4a7aa5;">
                 <p>✨ Mahadsanid! Nadiif waa caafimaad ✨</p>
                 <p>FAYADHOWR Cleaning Company - Waad ku mahadsantahay ganacsigaaga!</p>
             </div>
         </div>`;
     }
 
-    function printInvoice() {
-        let search = document.getElementById('searchSale')?.value.toLowerCase() || '';
-        let filtered = search ? sales.filter(s=>s.productName.toLowerCase().includes(search)||s.customer.toLowerCase().includes(search)) : sales;
-        let totalCash = filtered.filter(s=>s.isDebt==='no').reduce((sum,s)=>sum+(s.totalPrice||0),0);
-        let tableData = filtered.map(s => [escapeHtml(s.productName), escapeHtml(s.customer), s.quantity, `$${s.unitPrice?.toFixed(2)}`, s.isDebt==='yes'?'Deen':'Cash', `$${s.totalPrice?.toFixed(2)}`]);
-        let html = generateBeautifulInvoiceHtml(tableData, 'INVOICE', totalCash, false, filtered.length > 0);
-        let win = window.open('', '_blank');
-        win.document.write('<html><head><title>FAYADHOWR Invoice</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"><style>body{margin:0; padding:20px; background:#f0f2f5;}</style></head><body>'+html+'</body></html>');
-        win.document.close();
-        win.print();
-    }
-
-    function printReportInvoice() {
-        let search = document.getElementById('reportSearch')?.value.toLowerCase() || '';
-        let type = document.getElementById('reportType')?.value;
-        let filtered = sales.filter(s=>s.customer.toLowerCase().includes(search));
-        if(type === 'iibsaday') filtered = filtered.filter(s=>s.isDebt === 'no');
-        if(type === 'deen') filtered = filtered.filter(s=>s.isDebt === 'yes');
-        let totalSum = filtered.reduce((sum,s)=>sum+(s.totalPrice||0),0);
-        let tableData = filtered.map(s => [escapeHtml(s.customer), s.isDebt==='yes'?'Deen':'Cash', escapeHtml(s.productName), s.quantity, `$${s.totalPrice?.toFixed(2)}`, s.date]);
-        let html = generateBeautifulInvoiceHtml(tableData, 'REPORT', totalSum, true, filtered.length > 0);
-        let win = window.open('', '_blank');
-        win.document.write('<html><head><title>FAYADHOWR Report</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"><style>body{margin:0; padding:20px; background:#f0f2f5;}</style></head><body>'+html+'</body></html>');
-        win.document.close();
-        win.print();
-    }
-
-    function exportToStyledExcel(isReport = false) {
-        let data = [];
+    function downloadPDF(isReport = false) {
+        let search = '';
+        let filtered = [];
+        let totalCash = 0;
+        let tableData = [];
+        
         if(isReport) {
-            let search = document.getElementById('reportSearch')?.value.toLowerCase() || '';
+            search = document.getElementById('reportSearch')?.value.toLowerCase() || '';
             let type = document.getElementById('reportType')?.value;
-            let filtered = sales.filter(s=>s.customer.toLowerCase().includes(search));
-            if(type === 'iibsaday') filtered = filtered.filter(s=>s.isDebt === 'no');
-            if(type === 'deen') filtered = filtered.filter(s=>s.isDebt === 'yes');
-            data = [['Customer', 'Nooca', 'Alaabta', 'Tiro', 'Wadarta Lacagta', 'Waqti']];
-            filtered.forEach(s => data.push([s.customer, s.isDebt==='yes'?'Deen':'Cash', s.productName, s.quantity, `$${s.totalPrice?.toFixed(2)}`, s.date]));
+            filtered = sales.filter(s => s.customer.toLowerCase().includes(search));
+            if(type === 'iibsaday') filtered = filtered.filter(s => s.isDebt === 'no');
+            if(type === 'deen') filtered = filtered.filter(s => s.isDebt === 'yes');
+            totalCash = filtered.reduce((sum, s) => sum + (s.totalPrice || 0), 0);
+            tableData = filtered.map(s => [
+                escapeHtml(s.customer), 
+                s.isDebt === 'yes' ? 'Deen' : 'Cash', 
+                escapeHtml(s.productName), 
+                s.quantity, 
+                `$${s.totalPrice?.toFixed(2)}`, 
+                s.date
+            ]);
         } else {
-            let search = document.getElementById('searchSale')?.value.toLowerCase() || '';
-            let filtered = search ? sales.filter(s=>s.productName.toLowerCase().includes(search)||s.customer.toLowerCase().includes(search)) : sales;
-            data = [['Alaab', 'Customer', 'Tiro', 'Qiimo Unit', 'Deen?', 'Wadarta']];
-            filtered.forEach(s => data.push([s.productName, s.customer, s.quantity, `$${s.unitPrice?.toFixed(2)}`, s.isDebt==='yes'?'Deen':'Cash', `$${s.totalPrice?.toFixed(2)}`]));
+            search = document.getElementById('searchSale')?.value.toLowerCase() || '';
+            filtered = search ? sales.filter(s => s.productName.toLowerCase().includes(search) || s.customer.toLowerCase().includes(search)) : sales;
+            totalCash = filtered.filter(s => s.isDebt === 'no').reduce((sum, s) => sum + (s.totalPrice || 0), 0);
+            tableData = filtered.map(s => [
+                escapeHtml(s.productName), 
+                escapeHtml(s.customer), 
+                s.quantity, 
+                `$${s.unitPrice?.toFixed(2)}`, 
+                s.isDebt === 'yes' ? 'Deen' : 'Cash', 
+                `$${s.totalPrice?.toFixed(2)}`
+            ]);
         }
-        if(data.length === 1) {
-            data.push(['MA JIRO XOG', 'Fadlan samee iib marka hore', '', '', '', '']);
-        }
-        let wb = XLSX.utils.book_new();
-        let ws = XLSX.utils.aoa_to_sheet(data);
-        ws['!cols'] = [{wch:25},{wch:20},{wch:15},{wch:12},{wch:12},{wch:25}];
-        XLSX.utils.book_append_sheet(wb, ws, isReport ? 'Warbixin' : 'Iibka');
-        XLSX.writeFile(wb, `${isReport ? 'warbixin' : 'iibka'}_${Date.now()}.xlsx`);
-    }
-
-    function exportToStyledPdf(isReport = false) {
-        let element = document.getElementById(isReport ? 'reportTable' : 'salesTable');
-        let originalData = isReport ? sales.length : (document.getElementById('searchSale')?.value ? sales.filter(s=>s.productName.toLowerCase().includes(document.getElementById('searchSale').value.toLowerCase())||s.customer.toLowerCase().includes(document.getElementById('searchSale').value.toLowerCase())) : sales).length;
-        if(originalData === 0) {
-            alert("⚠️ Ma jiraan wax iib ah oo la diyaariyay! Fadlan samee ugu yaraan hal iib ka hor intaadan PDF soo saarin.");
+        
+        if(filtered.length === 0 && sales.length === 0) {
+            alert("⚠️ Ma jiraan wax iib ah oo la diyaariyay!\n\nFadlan samee ugu yaraan hal iib ka hor intaadan PDF soo saarin.\n\nTag qaybta '2. Alaab Iibin' oo samee iib.");
             return;
         }
-        let opt = { margin: [0.5,0.5,0.5,0.5], filename: `${isReport ? 'warbixin' : 'iibka'}_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } };
-        html2pdf().set(opt).from(element).save();
+        
+        const htmlContent = generateInvoiceHTML(tableData, totalCash, isReport);
+        const opt = {
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `${isReport ? 'FAYADHOWR_Warbixin' : 'FAYADHOWR_Invoice'}_${Date.now()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        
+        const element = document.createElement('div');
+        element.innerHTML = htmlContent;
+        element.style.position = 'absolute';
+        element.style.left = '-9999px';
+        element.style.top = '0';
+        document.body.appendChild(element);
+        
+        html2pdf().set(opt).from(element).save().then(() => {
+            document.body.removeChild(element);
+        });
     }
 
-    document.getElementById('printBtn')?.addEventListener('click', printInvoice);
-    document.getElementById('reportPrintBtn')?.addEventListener('click', printReportInvoice);
-    document.getElementById('excelBtn')?.addEventListener('click', ()=>exportToStyledExcel(false));
-    document.getElementById('reportExcelBtn')?.addEventListener('click', ()=>exportToStyledExcel(true));
-    document.getElementById('pdfBtn')?.addEventListener('click', ()=>exportToStyledPdf(false));
-    document.getElementById('reportPdfBtn')?.addEventListener('click', ()=>exportToStyledPdf(true));
+    document.getElementById('printBtn')?.addEventListener('click', () => {
+        let filtered = sales;
+        let search = document.getElementById('searchSale')?.value.toLowerCase() || '';
+        if(search) filtered = sales.filter(s => s.productName.toLowerCase().includes(search) || s.customer.toLowerCase().includes(search));
+        if(filtered.length === 0 && sales.length === 0) {
+            alert("⚠️ Ma jiraan wax iib ah! Fadlan samee iib marka hore.");
+            return;
+        }
+        let totalCash = filtered.filter(s => s.isDebt === 'no').reduce((sum, s) => sum + (s.totalPrice || 0), 0);
+        let tableData = filtered.map(s => [escapeHtml(s.productName), escapeHtml(s.customer), s.quantity, `$${s.unitPrice?.toFixed(2)}`, s.isDebt === 'yes' ? 'Deen' : 'Cash', `$${s.totalPrice?.toFixed(2)}`]);
+        let html = generateInvoiceHTML(tableData, totalCash, false);
+        let win = window.open('', '_blank');
+        win.document.write('<html><head><title>FAYADHOWR Invoice</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"><style>body{margin:0; padding:20px;}</style></head><body>' + html + '</body></html>');
+        win.document.close();
+        win.print();
+    });
+    
+    document.getElementById('reportPrintBtn')?.addEventListener('click', () => {
+        let search = document.getElementById('reportSearch')?.value.toLowerCase() || '';
+        let type = document.getElementById('reportType')?.value;
+        let filtered = sales.filter(s => s.customer.toLowerCase().includes(search));
+        if(type === 'iibsaday') filtered = filtered.filter(s => s.isDebt === 'no');
+        if(type === 'deen') filtered = filtered.filter(s => s.isDebt === 'yes');
+        if(filtered.length === 0 && sales.length === 0) {
+            alert("⚠️ Ma jiraan wax iib ah! Fadlan samee iib marka hore.");
+            return;
+        }
+        let totalSum = filtered.reduce((sum, s) => sum + (s.totalPrice || 0), 0);
+        let tableData = filtered.map(s => [escapeHtml(s.customer), s.isDebt === 'yes' ? 'Deen' : 'Cash', escapeHtml(s.productName), s.quantity, `$${s.totalPrice?.toFixed(2)}`, s.date]);
+        let html = generateInvoiceHTML(tableData, totalSum, true);
+        let win = window.open('', '_blank');
+        win.document.write('<html><head><title>FAYADHOWR Report</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"><style>body{margin:0; padding:20px;}</style></head><body>' + html + '</body></html>');
+        win.document.close();
+        win.print();
+    });
+    
+    document.getElementById('excelBtn')?.addEventListener('click', () => {
+        let search = document.getElementById('searchSale')?.value.toLowerCase() || '';
+        let filtered = search ? sales.filter(s => s.productName.toLowerCase().includes(search) || s.customer.toLowerCase().includes(search)) : sales;
+        let data = [['Alaab', 'Customer', 'Tiro', 'Qiimo Unit', 'Deen?', 'Wadarta']];
+        filtered.forEach(s => data.push([s.productName, s.customer, s.quantity, `$${s.unitPrice?.toFixed(2)}`, s.isDebt === 'yes' ? 'Deen' : 'Cash', `$${s.totalPrice?.toFixed(2)}`]));
+        if(data.length === 1) data.push(['MA JIRO XOG', '', '', '', '', '']);
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(data);
+        ws['!cols'] = [{wch:25},{wch:20},{wch:12},{wch:12},{wch:12},{wch:25}];
+        XLSX.utils.book_append_sheet(wb, ws, 'Iibka');
+        XLSX.writeFile(wb, `FAYADHOWR_Iibka_${Date.now()}.xlsx`);
+    });
+    
+    document.getElementById('reportExcelBtn')?.addEventListener('click', () => {
+        let search = document.getElementById('reportSearch')?.value.toLowerCase() || '';
+        let type = document.getElementById('reportType')?.value;
+        let filtered = sales.filter(s => s.customer.toLowerCase().includes(search));
+        if(type === 'iibsaday') filtered = filtered.filter(s => s.isDebt === 'no');
+        if(type === 'deen') filtered = filtered.filter(s => s.isDebt === 'yes');
+        let data = [['Customer', 'Nooca', 'Alaabta', 'Tiro', 'Wadarta Lacagta', 'Waqti']];
+        filtered.forEach(s => data.push([s.customer, s.isDebt === 'yes' ? 'Deen' : 'Cash', s.productName, s.quantity, `$${s.totalPrice?.toFixed(2)}`, s.date]));
+        if(data.length === 1) data.push(['MA JIRO XOG', '', '', '', '', '']);
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(data);
+        ws['!cols'] = [{wch:25},{wch:15},{wch:25},{wch:12},{wch:15},{wch:25}];
+        XLSX.utils.book_append_sheet(wb, ws, 'Warbixin');
+        XLSX.writeFile(wb, `FAYADHOWR_Warbixin_${Date.now()}.xlsx`);
+    });
+    
+    document.getElementById('pdfBtn')?.addEventListener('click', () => downloadPDF(false));
+    document.getElementById('reportPdfBtn')?.addEventListener('click', () => downloadPDF(true));
     
     document.getElementById('searchSale')?.addEventListener('input', renderSales);
     document.getElementById('reportSearch')?.addEventListener('input', renderReport);
